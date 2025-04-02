@@ -2,106 +2,83 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Game; 
 use Illuminate\Http\Request;
 
 class GameController extends Controller
 {
-  
     public function index()
     {
-        $games = session('games', []);   
+        $games = Game::all();
         return view('game.index', compact('games'));
     }
 
-    
     public function create()
     {
         return view('game.create');
     }
 
-   
     public function store(Request $request)
     {
-        $games = session('games', []);
+       
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'categoria' => 'required|string|max:255',
+            'ano' => 'required|numeric',
+            'nota' => 'required|numeric',
+        ]);
 
-        $newgame = [
-            'id'            => count($games) + 1,
-            'nome'          => $request->input('nome'),
-            'categoria'     => $request->input('categoria'),
-            'ano'           => $request->input('ano'),
-            'nota'          => $request->input('nota'),
-            
-        ];
+ 
+        Game::create([
+            'nome' => $request->input('nome'),
+            'categoria' => $request->input('categoria'),
+            'ano' => $request->input('ano'),
+            'nota' => $request->input('nota'),
+        ]);
 
-        $games[] = $newgame;
-        session(['games' => $games]);
-
-        return redirect()->route('jogos.index')->with('success', 'Jogo registrado com sucesso!');
+        return redirect()->route('jogos.index')->with('success', 'Jogo criado com sucesso!');
     }
 
-    
     public function show($id)
     {
-        $games = session('games', []);
-        $game = collect($games)->firstWhere('id', (int)$id);
-
-        if (!$game) {
-            return redirect()->route('jogos.index')->with('error', 'Jogo não encontrado!');
-        }
-
+        $game = Game::findOrFail($id);
         return view('game.show', compact('game'));
     }
 
-   
     public function edit($id)
-    { 
-        $games = session('games', []);
-        $game = collect($games)->firstWhere('id', (int)$id);
-
-        if (!$game) {
-            return redirect()->route('jogos.index')->with('error', 'Jogo não encontrado!');
-        }
-
+    {
+        $game = Game::findOrFail($id); 
         return view('game.edit', compact('game'));
     }
 
-   
     public function update(Request $request, $id)
     {
-        $games = session('games', []);
+        $game = Game::findOrFail($id);
 
-        foreach ($games as $key => $game) {
-            if ($game['id'] == $id) {
-                $games[$key]['nome']  = $request->input('nome');
-                $games[$key]['categoria'] = $request->input('categoria');
-                $games[$key]['ano']= $request->input('ano');
-                $games[$key]['nota']= $request->input('nota');
-                break;
-            }
-        }
+      
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'categoria' => 'required|string|max:255',
+            'ano' => 'required|numeric',
+            'nota' => 'required|numeric',
+        ]);
 
-        session(['games' => $games]);
+       
+        $game->update([
+            'nome' => $request->input('nome'),
+            'categoria' => $request->input('categoria'),
+            'ano' => $request->input('ano'),
+            'nota' => $request->input('nota'),
+        ]);
 
         return redirect()->route('jogos.index')->with('success', 'Jogo atualizado com sucesso!');
     }
 
-    
     public function destroy($id)
     {
-        $games = session('games', []);
-
-        foreach ($games as $key => $game) {
-            if ($game['id'] == $id) {
-                unset($games[$key]);
-                break;
-            }
-        }
-
-       
-        $games = array_values($games);
-        session(['games' => $games]);
+        $game = Game::findOrFail($id);
+        $game->delete();
 
         return redirect()->route('jogos.index')->with('success', 'Jogo removido com sucesso!');
-    
     }
 }
